@@ -2,7 +2,8 @@ import { Module } from "@nestjs/common";
 import { RequestsController } from "./controller/request.controller";
 import { CreateRequestUseCase } from "../usecases/create-request.usecase";
 import { IFindByIdTenantRepository } from "../domain/ports/tenant.repository";
-import { IGenerateRequestIdRepository, IIsEvantAvailableRepository, IPublishRequestRepository, ISaveRequestRepository, } from "../domain/ports/request.repository";
+import { IFindByIdempotencyKeyRepository, IGenerateRequestIdRepository, IPublishRequestRepository, ISaveRequestRepository, } from "../domain/ports/request.repository";
+import { IEventAvailabilityRepository } from "../domain/ports/event.repository";
 
 
 @Module({
@@ -11,11 +12,13 @@ import { IGenerateRequestIdRepository, IIsEvantAvailableRepository, IPublishRequ
             provide: CreateRequestUseCase,
             useFactory: (
                 tenantRepository: IFindByIdTenantRepository,
-                notificationRepository: IIsEvantAvailableRepository & ISaveRequestRepository & IGenerateRequestIdRepository,
+                eventRepository: IEventAvailabilityRepository,
+                notificationRepository: IFindByIdempotencyKeyRepository & ISaveRequestRepository & IGenerateRequestIdRepository,
                 publisher: IPublishRequestRepository
             ) => {
                 return new CreateRequestUseCase(
                     tenantRepository,
+                    eventRepository,
                     notificationRepository,
                     publisher
                 );

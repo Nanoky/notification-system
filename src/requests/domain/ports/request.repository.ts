@@ -1,23 +1,12 @@
+import { NotificationRequest } from "../models/request.model";
 
-
-export interface IIsEvantAvailableRepository {
-    isEventAvailable(eventType: string): Promise<boolean>
-}
+export type NotificationRequestDTO = NotificationRequest;
 
 export interface IGenerateRequestIdRepository {
     generateRequestId(): Promise<string>
 }
 export interface ISaveRequestRepository {
-    saveRequest(params: {
-        id: string;
-        tenantId: string;
-        eventType: string;
-        recipients: string[];
-        payload: Record<string, any>;
-        scheduledAt?: Date;
-        priority?: number;
-        idempotencyKey: string;
-    }): Promise<void>
+    saveRequest(dto: NotificationRequestDTO): Promise<void>
 }
 
 export interface IPublishRequestRepository {
@@ -26,4 +15,8 @@ export interface IPublishRequestRepository {
     }): Promise<void>
 }
 
-export interface IRequestRepository extends IIsEvantAvailableRepository, IGenerateRequestIdRepository, ISaveRequestRepository, IPublishRequestRepository { }
+export interface IFindByIdempotencyKeyRepository {
+    findByIdempotencyKey(idempotencyKey: string): Promise<NotificationRequestDTO | null>
+}
+
+export interface IRequestRepository extends IGenerateRequestIdRepository, ISaveRequestRepository, IPublishRequestRepository, IFindByIdempotencyKeyRepository { }

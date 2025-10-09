@@ -24,6 +24,6 @@ export class CreateRequestDto implements CreateRequestUseCaseInput {
         maximum: 10
     })
     priority?: number | undefined;
-    @ApiPropertyOptional()
+    @ApiProperty()
     idempotencyKey: string;
 }

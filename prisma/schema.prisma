@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model events {
+  id                    String                  @id @db.Uuid
+  tenant_id             String                  @db.Uuid
+  event_type            String
+  description           String?
+  enabled               Boolean?                @default(true)
+  created_at            DateTime?               @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime?               @default(now()) @db.Timestamptz(6)
+  tenants               tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  notification_requests notification_requests[]
+  recipient_preferences recipient_preferences[]
+  templates             templates[]
+
+  @@unique([tenant_id, event_type])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model notification_jobs {
+  id                    String                 @id @db.Uuid
+  request_id            String?                @db.Uuid
+  tenant_id             String                 @db.Uuid
+  recipient_id          String                 @db.Uuid
+  channel               String
+  template_id           String?                @db.Uuid
+  data                  Json?
+  status                String                 @default("PENDING")
+  attempt_count         Int?                   @default(0)
+  next_attempt_at       DateTime?              @db.Timestamptz(6)
+  provider_hint         String?
+  idempotency_key       String?
+  created_at            DateTime?              @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime?              @default(now()) @db.Timestamptz(6)
+  recipients            recipients             @relation(fields: [recipient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  notification_requests notification_requests? @relation(fields: [request_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model notification_requests {
+  id                String              @id @db.Uuid
+  tenant_id         String              @db.Uuid
+  event_type        String
+  payload           Json?
+  priority          Int?                @default(0)
+  scheduled_at      DateTime?           @db.Timestamptz(6)
+  status            String?
+  created_at        DateTime?           @default(now()) @db.Timestamptz(6)
+  event_id          String              @db.Uuid
+  notification_jobs notification_jobs[]
+  events            events              @relation(fields: [event_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model recipient_channels {
+  id           String     @id @db.Uuid
+  recipient_id String     @db.Uuid
+  channel      String
+  address      String
+  active       Boolean?   @default(true)
+  metadata     Json?      @default("{}")
+  created_at   DateTime?  @default(now()) @db.Timestamptz(6)
+  recipients   recipients @relation(fields: [recipient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([recipient_id, channel, address])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model recipient_preferences {
+  id           String     @id @db.Uuid
+  recipient_id String     @db.Uuid
+  event_id     String?    @db.Uuid
+  channel      String?
+  allowed      Boolean?   @default(true)
+  quiet_hours  Json?
+  updated_at   DateTime?  @default(now()) @db.Timestamptz(6)
+  events       events?    @relation(fields: [event_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  recipients   recipients @relation(fields: [recipient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([recipient_id, event_id, channel])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model recipients {
+  id                    String                  @id @db.Uuid
+  tenant_id             String                  @db.Uuid
+  external_id           String?
+  name                  String?
+  email                 String?
+  phone                 String?
+  webhook_url           String?
+  attributes            Json?                   @default("{}")
+  created_at            DateTime?               @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime?               @default(now()) @db.Timestamptz(6)
+  notification_jobs     notification_jobs[]
+  recipient_channels    recipient_channels[]
+  recipient_preferences recipient_preferences[]
+  tenants               tenants                 @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([tenant_id, external_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model templates {
+  id         String    @id @db.Uuid
+  event_id   String    @db.Uuid
+  tenant_id  String    @db.Uuid
+  channel    String
+  locale     String    @default("en")
+  version    Int       @default(1)
+  name       String
+  subject    String?
+  body       String
+  variables  Json?     @default("[]")
+  active     Boolean?  @default(true)
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+  events     events    @relation(fields: [event_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  tenants    tenants   @relation(fields: [tenant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([event_id, channel, locale, version])
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tenants {
+  id            String       @id @db.Uuid
+  name          String
+  slug          String       @unique
+  contact_email String?
+  settings      Json?        @default("{}")
+  created_at    DateTime?    @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?    @default(now()) @db.Timestamptz(6)
+  events        events[]
+  recipients    recipients[]
+  templates     templates[]
+}

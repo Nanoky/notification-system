@@ -22,7 +22,7 @@ export class DomainErrorFilter implements ExceptionFilter {
         code?: string;
         message: string | object;
     }): Promise<void> {
-        this.logger.error("Exception catched", {
+        this.logger.error(`${params.apiUrl} - ${params.status} - ${params.code ? params.code + ': ' : ''}${JSON.stringify(params.message)}`, {
             ...params
         });
 

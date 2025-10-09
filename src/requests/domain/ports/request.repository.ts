@@ -6,12 +6,13 @@ export interface IGenerateRequestIdRepository {
     generateRequestId(): Promise<string>
 }
 export interface ISaveRequestRepository {
-    saveRequest(dto: NotificationRequestDTO): Promise<void>
+    saveRequest(dto: Omit<NotificationRequestDTO, 'recipients'>): Promise<void>
 }
 
 export interface IPublishRequestRepository {
     publishRequest(params: {
         id: string;
+        recipients: string[]
     }): Promise<void>
 }
 

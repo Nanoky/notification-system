@@ -4,8 +4,13 @@ import { AppService } from './app.service';
 import { RequestsModule } from './requests/presentation/requests.module';
 
 @Module({
-  imports: [RequestsModule],
+  imports: [
+    RequestsModule
+  ],
   controllers: [AppController],
-  providers: [AppService, Logger],
+  providers: [
+    AppService, 
+    Logger,
+  ],
 })
 export class AppModule { }

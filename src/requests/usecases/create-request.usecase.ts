@@ -3,7 +3,7 @@ import { ValidationError } from "src/shared/errors/validation.error";
 import { IFindByIdempotencyKeyRepository, IGenerateRequestIdRepository, IPublishRequestRepository, ISaveRequestRepository } from "../domain/ports/request.repository";
 import { IFindByIdTenantRepository } from "../domain/ports/tenant.repository";
 import { isNullOrUndefined } from "src/shared/utils/common";
-import { IEventAvailabilityRepository } from "../domain/ports/event.repository";
+import { IFindByTypeEventRepository } from "../domain/ports/event.repository";
 import { NotificationRequest } from "../domain/models/request.model";
 
 
@@ -22,9 +22,8 @@ export type CreateRequestUseCaseOutput = void;
 export class CreateRequestUseCase implements Executable<CreateRequestUseCaseInput, CreateRequestUseCaseOutput> {
     constructor(
         private readonly tenantRepository: IFindByIdTenantRepository,
-        private readonly eventRepository: IEventAvailabilityRepository,
-        private readonly requestRepository: ISaveRequestRepository & IGenerateRequestIdRepository & IFindByIdempotencyKeyRepository,
-        private readonly publisher: IPublishRequestRepository
+        private readonly eventRepository: IFindByTypeEventRepository,
+        private readonly requestRepository: ISaveRequestRepository & IGenerateRequestIdRepository & IFindByIdempotencyKeyRepository & IPublishRequestRepository,
     ) { }
     async execute(params: CreateRequestUseCaseInput): Promise<void> {
 
@@ -38,18 +37,19 @@ export class CreateRequestUseCase implements Executable<CreateRequestUseCaseInpu
             throw new ValidationError("Tenant not found")
         }
 
-        const isEventAvailable = await this.eventRepository.isEventAvailable({
+        const eventDto = await this.eventRepository.findByType({
             eventType: params.eventType,
             tenantId: tenantDTO.id
         });
-        if (!isEventAvailable) {
-            throw new ValidationError("Event type not available")
+        if (isNullOrUndefined(eventDto)) {
+            throw new ValidationError("Event type not found")
         }
 
         const id = await this.requestRepository.generateRequestId();
         const request: NotificationRequest = {
             id: id,
             tenantId: params.tenantId,
+            eventId: eventDto.id,
             eventType: params.eventType,
             recipients: params.recipients,
             payload: params.payload,
@@ -59,10 +59,13 @@ export class CreateRequestUseCase implements Executable<CreateRequestUseCaseInpu
             createdAt: new Date(),
             idempotencyKey: params.idempotencyKey
         }
-        await this.requestRepository.saveRequest(request);
+        await this.requestRepository.saveRequest({
+            ...request
+        });
 
-        await this.publisher.publishRequest({
+        await this.requestRepository.publishRequest({
             id: id,
+            recipients: params.recipients
         });
     }
 }

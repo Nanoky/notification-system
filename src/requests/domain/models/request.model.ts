@@ -4,6 +4,7 @@ export type RequestStatus = 'PENDING' | 'PROCESSING' | 'IN_PROGRESS' | 'PARTIALL
 export interface NotificationRequest {
     id: string;
     tenantId: string;
+    eventId: string;
     eventType: string;
     recipients: string[];
     payload: Record<string, any>;

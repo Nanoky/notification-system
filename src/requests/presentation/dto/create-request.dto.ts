@@ -8,11 +8,21 @@ export class CreateRequestDto implements CreateRequestUseCaseInput {
     tenantId: string;
     @ApiProperty()
     recipients: string[];
-    @ApiProperty()
+    @ApiProperty({
+        type: 'object',
+        additionalProperties: true
+    })
     payload: Record<string, any>;
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({
+        type: 'string',
+        format: 'date-time'
+    })
     scheduledAt?: Date | undefined;
-    @ApiPropertyOptional()
+    @ApiPropertyOptional({
+        type: 'number',
+        minimum: 0,
+        maximum: 10
+    })
     priority?: number | undefined;
     @ApiPropertyOptional()
     idempotencyKey: string;

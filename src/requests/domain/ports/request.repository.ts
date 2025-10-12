@@ -20,4 +20,8 @@ export interface IFindByIdempotencyKeyRepository {
     findByIdempotencyKey(idempotencyKey: string): Promise<NotificationRequestDTO | null>
 }
 
-export interface IRequestRepository extends IGenerateRequestIdRepository, ISaveRequestRepository, IPublishRequestRepository, IFindByIdempotencyKeyRepository { }
+export interface IFindByIdRequestRepository {
+    findById(id: string): Promise<NotificationRequestDTO | null>
+}
+
+export interface IRequestRepository extends IGenerateRequestIdRepository, ISaveRequestRepository, IPublishRequestRepository, IFindByIdempotencyKeyRepository, IFindByIdRequestRepository { }

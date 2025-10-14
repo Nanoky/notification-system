@@ -18,3 +18,5 @@ export interface IFormatMessageTemplateRepository {
         variables: Record<string, any>;
     }): Promise<string>;
 }
+
+export interface ITemplateRepository extends IFindByEventIdTemplateRepository, IFormatMessageTemplateRepository { }

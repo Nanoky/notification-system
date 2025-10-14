@@ -2,7 +2,7 @@ import { IFindByIdRequestRepository } from "src/requests/domain/ports/request.re
 import { Executable } from "src/shared/core/executable.interface";
 import { ValidationError } from "src/shared/errors/validation.error";
 import { isNullOrUndefined } from "src/shared/utils/common";
-import { IFindByEventIdRecipientRepository } from "../domain/ports/recipient.repository";
+import { IFindByIdRecipientRepository } from "../domain/ports/recipient.repository";
 import { IFindByEventIdTemplateRepository, IFormatMessageTemplateRepository } from "../domain/ports/template.repository";
 import { NotificationJob } from "../domain/models/job.model";
 import { ICreateManyJobsRepository, IGenerateJobIdempotencyKeyRepository, IGenerateJobIdRepository, IPublishJobRepository } from "../domain/ports/job.repository";
@@ -17,7 +17,7 @@ export type CreateJobUseCaseOutput = void;
 export class CreateJobUseCase implements Executable<CreateJobUseCaseInput, CreateJobUseCaseOutput> {
     constructor(
         private readonly requestRepository: IFindByIdRequestRepository,
-        private readonly recipientRepository: IFindByEventIdRecipientRepository,
+        private readonly recipientRepository: IFindByIdRecipientRepository,
         private readonly templateRepository: IFindByEventIdTemplateRepository & IFormatMessageTemplateRepository,
         private readonly jobRepository: IGenerateJobIdRepository & IGenerateJobIdempotencyKeyRepository & ICreateManyJobsRepository & IPublishJobRepository
     ) { }
@@ -32,15 +32,15 @@ export class CreateJobUseCase implements Executable<CreateJobUseCaseInput, Creat
             throw new ValidationError("Request status is not PENDING")
         }
 
-        const recipients = await this.recipientRepository.findByEventId(requestDTO.eventId);
-
-        if (recipients.length === 0) {
-            throw new ValidationError("No recipients found")
-        }
-
         const jobs: NotificationJob[] = [];
 
-        for (const recipient of recipients) {
+        for (const recipientId of params.recipients) {
+            const recipient = await this.recipientRepository.findById(recipientId);
+
+            if (isNullOrUndefined(recipient)) {
+                continue;
+            }
+
             for (const address of recipient.addresses) {
                 const template = await this.templateRepository.findByEventId({
                     eventId: requestDTO.eventId,
@@ -65,6 +65,7 @@ export class CreateJobUseCase implements Executable<CreateJobUseCaseInput, Creat
 
                 const job: NotificationJob = {
                     id: jobId,
+                    tenantId: requestDTO.tenantId,
                     channel: address.channel,
                     templateId: template.id,
                     recipientId: recipient.id,

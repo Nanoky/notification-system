@@ -19,3 +19,5 @@ export interface IGenerateJobIdempotencyKeyRepository {
 export interface ICreateManyJobsRepository {
     createMany(params: NotificationJobDTO[]): Promise<void>
 }
+
+export interface INotificationJobRepository extends IPublishJobRepository, IGenerateJobIdRepository, IGenerateJobIdempotencyKeyRepository, ICreateManyJobsRepository { }

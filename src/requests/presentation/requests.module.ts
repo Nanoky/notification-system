@@ -30,5 +30,6 @@ import { PrismaService } from "src/shared/services/prisma.service";
         }
     ],
     controllers: [RequestsController],
+    exports: [PrismaRequestRepository]
 })
 export class RequestsModule { }

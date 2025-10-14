@@ -4,6 +4,7 @@ export type JobStatus = "PENDING" | "SENT" | "FAILED" | "RETRY" | "DLQ";
 
 export interface NotificationJob {
     id: string;
+    tenantId: string;
     channel: Channel;
     templateId: string;
     recipientId: string;
